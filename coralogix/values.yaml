@@ -7,6 +7,13 @@ global:
 opentelemetry-agent:
   enabled: true
   mode: daemonset
+  provider: on-prem
+  startupProbe:
+    failureThreshold: 30
+    httpGet:
+      path: /
+      port: 13133
+    periodSeconds: 10
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
