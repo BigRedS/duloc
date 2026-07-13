@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-upload-config
+  namespace: nextcloud
+data:
+  nextcloud-uploads.ini: |
+    output_buffering = 0
+    max_input_time = 3600
+    max_execution_time = 3600

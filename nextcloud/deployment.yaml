@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      initContainers:
+        - name: create-db
+          image: mariadb:11
+          env:
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: NEXTCLOUD_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: MYSQL_PASSWORD
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mariadb -h mariadb.mariadb.svc.cluster.local -u root \
+                -e "CREATE DATABASE IF NOT EXISTS nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+                    CREATE USER IF NOT EXISTS 'nextcloud'@'%' IDENTIFIED BY '${NEXTCLOUD_DB_PASSWORD}';
+                    GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'%';
+                    FLUSH PRIVILEGES;"
+      containers:
+        - name: nextcloud
+          image: nextcloud:apache
+          env:
+            - name: MYSQL_HOST
+              value: mariadb.mariadb.svc.cluster.local  # adjust to your MariaDB host
+            - name: MYSQL_DATABASE
+              value: nextcloud
+            - name: MYSQL_USER
+              value: nextcloud
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: MYSQL_PASSWORD
+            - name: NEXTCLOUD_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: NEXTCLOUD_ADMIN_USER
+            - name: NEXTCLOUD_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: NEXTCLOUD_ADMIN_PASSWORD
+            - name: NEXTCLOUD_TRUSTED_DOMAINS
+              value: "nextcloud nextcloud.taila5db6b.ts.net"  # your Tailscale or public hostname
+            - name: PHP_UPLOAD_LIMIT
+              value: "5G"  # max single-file upload size; 5G covers VFAT's 4GiB-1 limit
+            - name: APACHE_BODY_LIMIT
+              value: "0"  # 0 = unlimited; makes PHP_UPLOAD_LIMIT the sole effective cap
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nextcloud-data
+              mountPath: /var/www/html
+            - name: s3-config-source
+              mountPath: /etc/nextcloud-s3
+              readOnly: true
+            - name: nc-hooks
+              mountPath: /docker-entrypoint-hooks.d/before-starting
+            - name: upload-config
+              mountPath: /usr/local/etc/php/conf.d/nextcloud-uploads.ini
+              subPath: nextcloud-uploads.ini
+      volumes:
+        - name: nextcloud-data
+          persistentVolumeClaim:
+            claimName: nextcloud-data
+        - name: s3-config-source
+          secret:
+            secretName: nextcloud-secret
+            items:
+              - key: nextcloud-s3.config.php
+                path: nextcloud-s3.config.php
+        - name: nc-hooks
+          configMap:
+            name: nextcloud-hooks
+            defaultMode: 0755
+        - name: upload-config
+          configMap:
+            name: nextcloud-upload-config

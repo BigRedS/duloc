@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-hooks
+  namespace: nextcloud
+data:
+  10-copy-s3-config.sh: |
+    #!/bin/sh
+    set -e
+    cp /etc/nextcloud-s3/nextcloud-s3.config.php /var/www/html/config/objectstore.config.php
+    chmod 640 /var/www/html/config/objectstore.config.php
