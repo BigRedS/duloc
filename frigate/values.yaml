@@ -19,16 +19,18 @@ config: |
                 inputs:
                     - path: rtsp://streamer:Stinkles@192.168.0.193/Streaming/channels/101
                       roles:
-                        - detect
                         - record
+                    - path: rtsp://streamer:Stinkles@192.168.0.193/Streaming/channels/102
+                      roles:
+                        - detect
             detect:
-                width: 1280
-                height: 720
+                width: 640
+                height: 360
                 fps: 3
                 enabled: True
             motion:
                 mask:
-                - 1280,470,724,437,344,379,0,343,0,0,1280,0
+                - 640,235,362,219,172,190,0,172,0,0,640,0
             record:
                 enabled: True
                 retain:
@@ -45,16 +47,18 @@ config: |
                 inputs:
                     - path: rtsp://streamer:Stinkles@192.168.0.192/Streaming/channels/101
                       roles:
-                        - detect
                         - record
+                    - path: rtsp://streamer:Stinkles@192.168.0.192/Streaming/channels/102
+                      roles:
+                        - detect
             detect:
-                width: 1280
-                height: 720
+                width: 640
+                height: 360
                 fps: 3
                 enabled: True
             motion:
                 mask:
-                - 1280,470,724,437,344,379,0,343,0,0,1280,0
+                - 640,235,362,219,172,190,0,172,0,0,640,0
             record:
                 enabled: True
                 retain:
@@ -70,11 +74,13 @@ config: |
                 inputs:
                     - path: rtsp://streamer:Stinkles@192.168.0.190/Streaming/channels/101
                       roles:
-                        - detect
                         - record
+                    - path: rtsp://streamer:Stinkles@192.168.0.190/Streaming/channels/102
+                      roles:
+                        - detect
             detect:
-                width: 1280
-                height: 720
+                width: 640
+                height: 360
                 fps: 3
                 enabled: True
             record:
@@ -92,11 +98,13 @@ config: |
                 inputs:
                     - path: rtsp://streamer:Stinkles@192.168.0.191/Streaming/channels/101
                       roles:
-                        - detect
                         - record
+                    - path: rtsp://streamer:Stinkles@192.168.0.191/Streaming/channels/102
+                      roles:
+                        - detect
             detect:
-                width: 1280
-                height: 720
+                width: 640
+                height: 360
                 fps: 3
                 enabled: True
             record:
