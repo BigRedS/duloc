@@ -3,17 +3,41 @@ global:
   clusterName: nuc
   defaultApplicationName: nucs
   defaultSubsystemName: nucs
-  collectionInterval: 60s
+  collectionInterval: 120s
 opentelemetry-agent:
   enabled: true
   mode: daemonset
   provider: on-prem
+  presets:
+    spanMetrics:
+      enabled: false
+    profilesCollection:
+      enabled: false
+    profilesK8sAttributes:
+      enabled: false
   startupProbe:
     failureThreshold: 30
     httpGet:
       path: /
       port: 13133
     periodSeconds: 10
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  extraEnvs:
+    - name: GOGC
+      value: "400"
