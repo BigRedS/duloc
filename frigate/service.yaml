@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frigate
+  namespace: frigate
+  annotations:
+    tailscale.com/expose: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.0.204
+  selector:
+    app: frigate
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: http-auth
+      port: 8971
+      targetPort: http-auth
+    - name: rtmp
+      port: 1935
+      targetPort: rtmp
+    - name: rtsp
+      port: 8554
+      targetPort: rtsp
+    - name: webrtc-udp
+      port: 8555
+      targetPort: webrtc-udp
+      protocol: UDP
+    - name: webrtc-tcp
+      port: 8555
+      targetPort: webrtc-tcp

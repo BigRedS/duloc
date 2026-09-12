@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frigate
+  namespace: frigate
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: frigate
+  template:
+    metadata:
+      labels:
+        app: frigate
+    spec:
+      containers:
+        - name: frigate
+          image: ghcr.io/blakeblackshear/frigate:0.14.1
+          envFrom:
+            - secretRef:
+                name: frigate-secret
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 5000
+              name: http
+            - containerPort: 8971
+              name: http-auth
+            - containerPort: 1935
+              name: rtmp
+            - containerPort: 8554
+              name: rtsp
+            - containerPort: 8555
+              name: webrtc-udp
+              protocol: UDP
+            - containerPort: 8555
+              name: webrtc-tcp
+            - containerPort: 1984
+              name: go2rtc-admin
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 5
+          volumeMounts:
+            - name: coral-dev
+              mountPath: /dev/bus/usb
+            - name: configmap
+              mountPath: /config/config.yml
+              subPath: config.yml
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data
+            - name: media
+              mountPath: /media
+            - name: dshm
+              mountPath: /dev/shm
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: configmap
+          configMap:
+            name: frigate-config
+        - name: coral-dev
+          hostPath:
+            path: /dev/bus/usb
+        - name: config
+          emptyDir: {}
+        - name: data
+          emptyDir: {}
+        - name: media
+          persistentVolumeClaim:
+            claimName: frigate-media
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi

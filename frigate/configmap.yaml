@@ -1,14 +1,19 @@
-coral:
-    enabled: true
-    hostPath: /dev/bus/usb
-
-config: |
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-config
+  namespace: frigate
+data:
+  config.yml: |
     logger:
         logs:
           frigate.record.maintainer: debug
 
     mqtt:
         enabled: false
+        host: "{FRIGATE_MQTT_HOST}"
+        user: "{FRIGATE_MQTT_USER}"
+        password: "{FRIGATE_MQTT_PASSWORD}"
     detectors:
         coral:
             type: edgetpu
@@ -17,10 +22,10 @@ config: |
         front:
             ffmpeg:
                 inputs:
-                    - path: rtsp://streamer:Stinkles@192.168.0.193/Streaming/channels/101
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.193/Streaming/channels/101
                       roles:
                         - record
-                    - path: rtsp://streamer:Stinkles@192.168.0.193/Streaming/channels/102
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.193/Streaming/channels/102
                       roles:
                         - detect
             detect:
@@ -45,10 +50,10 @@ config: |
         road:
             ffmpeg:
                 inputs:
-                    - path: rtsp://streamer:Stinkles@192.168.0.192/Streaming/channels/101
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.192/Streaming/channels/101
                       roles:
                         - record
-                    - path: rtsp://streamer:Stinkles@192.168.0.192/Streaming/channels/102
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.192/Streaming/channels/102
                       roles:
                         - detect
             detect:
@@ -72,10 +77,10 @@ config: |
         side:
             ffmpeg:
                 inputs:
-                    - path: rtsp://streamer:Stinkles@192.168.0.190/Streaming/channels/101
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.190/Streaming/channels/101
                       roles:
                         - record
-                    - path: rtsp://streamer:Stinkles@192.168.0.190/Streaming/channels/102
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.190/Streaming/channels/102
                       roles:
                         - detect
             detect:
@@ -96,10 +101,10 @@ config: |
         rear:
             ffmpeg:
                 inputs:
-                    - path: rtsp://streamer:Stinkles@192.168.0.191/Streaming/channels/101
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.191/Streaming/channels/101
                       roles:
                         - record
-                    - path: rtsp://streamer:Stinkles@192.168.0.191/Streaming/channels/102
+                    - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.0.191/Streaming/channels/102
                       roles:
                         - detect
             detect:
@@ -117,19 +122,3 @@ config: |
                     mode: active_objects
             snapshots:
                 enabled: True
-service:
-  type: LoadBalancer
-  port: 80
-  loadBalancerIP: 192.168.0.204
-  loadBalancerClass: tailscale
-
-ingress:
-    enabled: false
-
-persistence:
-    config:
-        enabled: false
-    media:
-        enabled: true
-        storageClass: longhorn
-        size: 80Gi
