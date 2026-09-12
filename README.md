@@ -1,7 +1,7 @@
-# Too Lazy For Argo Or Flux
+# Duloc Cluster
 
-This is basically some shell scripts that run some helm installs to get my pair-of-nucs
-k8s cluster.
+This is the config for my homelab `duloc` cluster. Previously it was shell-scripted helm incantations, now it's (mostly) kustomize manifests.
 
-Should all be self-explanatory, but definitely here as a backup not to show the rightest
-way to run a cluster!
+Functionally, this is where I host services I want accessible over my tailnet but not the Internet.
+
+I think nothing is anything other than as-expected here, besides the Nextcloud deploy that took more work than I'd have liked.
