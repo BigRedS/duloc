@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeserver
+  namespace: codeserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codeserver
+  template:
+    metadata:
+      labels:
+        app: codeserver
+    spec:
+      securityContext:
+        fsGroup: 1000  # coder user in the image, so the PVC is writable
+      containers:
+        - name: codeserver
+          image: codercom/code-server:latest
+          args:
+            - --auth
+            - "none"
+            - --bind-addr
+            - 0.0.0.0:8080
+          env:
+            - name: TZ
+              value: "Etc/UTC"  # adjust to your timezone
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: codeserver-data
+              mountPath: /home/coder
+      volumes:
+        - name: codeserver-data
+          persistentVolumeClaim:
+            claimName: codeserver-data
