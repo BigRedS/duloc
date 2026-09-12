@@ -38,6 +38,9 @@ spec:
       containers:
         - name: nextcloud
           image: nextcloud:apache
+          resources:
+            requests:
+              cpu: 500m
           env:
             - name: MYSQL_HOST
               value: mariadb.mariadb.svc.cluster.local  # adjust to your MariaDB host

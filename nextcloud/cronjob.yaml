@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-cron
+  namespace: nextcloud
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          serviceAccountName: nextcloud-cron
+          restartPolicy: Never
+          containers:
+            - name: occ-cron
+              image: rancher/kubectl:v1.34.5
+              command:
+                - kubectl
+                - --namespace=nextcloud
+                - exec
+                - deploy/nextcloud
+                - -c
+                - nextcloud
+                - --
+                - su
+                - -s
+                - /bin/sh
+                - www-data
+                - -c
+                - |
+                  echo "[cron] start $(date -u +%FT%TZ)"
+                  php -f /var/www/html/cron.php
+                  rc=$?
+                  echo "[cron] end $(date -u +%FT%TZ) exit=$rc"
+                  echo "[cron] warnings/errors from the last 200 log lines:"
+                  tail -n 200 /var/www/html/data/nextcloud.log | php -r '
+                  $fh = fopen("php://stdin", "r");
+                  while ($x = fgets($fh)) {
+                    $d = json_decode($x, true);
+                    if ($d && ($d["level"] ?? 0) >= 2) {
+                      echo $d["time"]." [".$d["level"]."] ".($d["app"]??"?")." - ".($d["message"]??"").PHP_EOL;
+                    }
+                  }
+                  '
+                  exit $rc

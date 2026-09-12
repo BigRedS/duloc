@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nextcloud-cron
+  namespace: nextcloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nextcloud-cron-exec
+  namespace: nextcloud
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nextcloud-cron-exec
+  namespace: nextcloud
+subjects:
+  - kind: ServiceAccount
+    name: nextcloud-cron
+    namespace: nextcloud
+roleRef:
+  kind: Role
+  name: nextcloud-cron-exec
+  apiGroup: rbac.authorization.k8s.io

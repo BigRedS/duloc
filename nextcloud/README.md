@@ -1,68 +1,78 @@
 # nextcloud
 
-`nextcloud:apache` with MariaDB (`mariadb.mariadb.svc.cluster.local`) and MinIO as S3 primary object storage. Exposed via Tailscale. Managed with Kustomize.
+`nextcloud:apache` with MariaDB (`mariadb.mariadb.svc.cluster.local`) and MinIO. Exposed via Tailscale.
+
+Mostly for gopro videos.
 
 ## Prerequisites
 
-- MariaDB running and reachable (default assumed at `mariadb.mariadb.svc.cluster.local`)
+- MariaDB at `mariadb.mariadb.svc.cluster.local
 - MinIO with a `nextcloud` bucket (created automatically on first start if the access key has bucket-create permissions)
-- Tailscale operator installed if you want the Tailscale service exposure
 
 ## Configuration
 
-Two files are gitignored and must be created from their `.example` counterparts before deploying:
-
-**`credentials.env`** — copy from `credentials.env.example` and fill in:
+`credentials.env`:
 - `MYSQL_ROOT_PASSWORD` — MariaDB root password (used only by the init container to create the nextcloud DB and user)
 - `MYSQL_PASSWORD` — password for the `nextcloud` DB user (generated fresh, not the root password)
 - `NEXTCLOUD_ADMIN_USER` / `NEXTCLOUD_ADMIN_PASSWORD` — Nextcloud admin account
 
-**`nextcloud-s3.config.php`** — copy from `nextcloud-s3.config.php.example` and fill in your MinIO/S3 `key`, `secret`, and `hostname`. The `bucket` name can be changed here too; ensure the bucket exists in MinIO or the access key has permission to create it.
+`nextcloud-s3.config.php` to configure the Minio/S3 bucket:
+- `key`
+- `secret`
+- `hostname`
 
-In `deployment.yaml`, update `NEXTCLOUD_TRUSTED_DOMAINS` and `MYSQL_HOST` (marked with comments). In `service.yaml`, update the Tailscale hostname annotation.
+`deployment.yaml`:
+- `NEXTCLOUD_TRUSTED_DOMAINS` and
+- `MYSQL_HOST`
 
 ## Deploy
 
-```
-cp credentials.env.example credentials.env
-cp nextcloud-s3.config.php.example nextcloud-s3.config.php
-# edit both files, then:
-kubectl apply -k .
-```
+    kubectl apply -k .
 
 Nextcloud initialises on first start. The init container creates the `nextcloud` database and DB user in MariaDB (idempotent — safe on restarts). The main container then runs Nextcloud's setup, which reads `s3.config.php` from the config directory and uses MinIO as the primary object store from the start.
 
 First start is slow (~2 minutes). Watch progress with:
 
-```
-kubectl logs -n nextcloud deployment/nextcloud -f
-```
+    kubectl logs -n nextcloud deployment/nextcloud -f
 
-## How S3 primary storage works
+## S3 primary storage works
 
-`nextcloud-s3.config.php` is mounted directly into `/var/www/html/config/` as a Kubernetes subPath volume mount. Nextcloud auto-loads all `.php` files in that directory. When `objectstore` is present at install time, all user file data goes to S3 rather than the PVC. The PVC stores only the Nextcloud installation files, apps, and config — not user data.
+`nextcloud-s3.config.php` is mounted directly into `/var/www/html/config/` as a subPath volume mount.
 
-**Do not add user files or configure external storage before verifying that `occ config:system:get objectstore` returns your S3 bucket.** If the S3 config is missing on first start, user data will land on the PVC and migration is painful.
+Nextcloud autoloads all `.php` files in that directory; when `objectstore` is present at install time, all user file data goes to S3 rather than the PVC. The PVC stores only the Nextcloud installation files, apps, and config — not user data (.
 
-To verify after first start:
-```
-kubectl exec -n nextcloud deployment/nextcloud -- su -s /bin/sh www-data -c 'php occ config:system:get objectstore'
-```
+Any files uploaded before the S3 is mounted will go to the PVC, and Nextcloud won't fix that automatically. To verify:
+
+    kubectl exec -n nextcloud deployment/nextcloud -- su -s /bin/sh www-data -c 'php occ config:system:get objectstore'
+
+## Cron jobs
+
+Nextcloud requires cron-jobs run from time-to-time. It defaults to AJAX mode, which seems to require lots of browser visits; not so good were I'm using this almost entirely as network filesystem.
+
+`cron-rbac.yaml` and `cronjob.yaml` set up these background jobs, whic `kubectl exec deploy/nextcloud -- php occ background:cron`, using a scoped `ServiceAccount`/`Role` that can only `exec` into pods in the `nextcloud` namespace.
+
+I tried a separate cron-job pod but that requires node affinities and perhaps other complexity that I wanted to ignore, so I decided to just shell in.
+
+On first run it flips `backgroundjobs_mode` to `cron`; if the cron-job ever stops runnign this was probably switched back by something.
+
+Settings -> Administration -> Basic settings in the Nextcloud UI shows the current mode and the last-run of the cronjob
 
 ## Backup and recovery
 
-**MySQL is the critical backup.** Nextcloud stores all metadata (users, shares, file trees, app config) in MariaDB. S3 holds only content blocks — without the database, the S3 data is effectively orphaned.
+I was hoping for nothing in-cluster to be stateful, but that's where I put the MySQL :(
 
-To recover from a MySQL backup with a fresh PVC: the init container will try to `CREATE DATABASE IF NOT EXISTS` (a no-op since the restored DB already exists). Nextcloud's entrypoint detects an existing installation and skips setup. S3 config is re-injected via the volume mount on every start, so no manual step is needed.
+Nextcloud stores all metadata (users, shares, file trees, app config) in MariaDB, so without it the mess of file chunks on S3 are meaningless.
+
+To recover from a MySQL backup with a fresh PVC, create the DB first: the init container will try to `CREATE DATABASE IF NOT EXISTS` (a no-op since the restored DB already exists). Nextcloud's entrypoint detects an existing installation and skips setup. S3 config is re-injected via the volume mount on every start, so no manual step is needed.
 
 ## Non-obvious behaviours
 
-**DB user creation** is handled by the init container on every pod start using `CREATE USER IF NOT EXISTS` and `GRANT ALL PRIVILEGES` — idempotent, safe to re-run.
+* **MySQL needs to be kept backed-up**
 
-**`MYSQL_ROOT_PASSWORD`** in `credentials.env` is used only by the init container. Nextcloud itself only uses `MYSQL_PASSWORD` (the `nextcloud` DB user's password). They should be different.
+* **DB user creation**:  handled by the init container on every pod start. Nextcloud absolutely insists on owning this
 
-**`NEXTCLOUD_TRUSTED_DOMAINS`** must include every hostname you access Nextcloud from, space-separated. If you add a new domain later: `kubectl exec -n nextcloud deployment/nextcloud -- su -s /bin/sh www-data -c 'php occ config:system:set trusted_domains 1 --value=new.hostname'`
+* **Hostnames** `NEXTCLOUD_TRUSTED_DOMAINS` must include every hostname you access Nextcloud from, space-separated. If you add a new domain later: `kubectl exec -n nextcloud deployment/nextcloud -- su -s /bin/sh www-data -c 'php occ config:system:set trusted_domains 1 --value=new.hostname'`
 
-**subPath mount and rsync**: On first start, Nextcloud's entrypoint rsyncs files from `/usr/src/nextcloud` to `/var/www/html`. The `s3.config.php` subPath mount at `/var/www/html/config/s3.config.php` survives this because Kubernetes subPath mounts are bind-mounted at the kernel level and cannot be unlinked by rsync. rsync may log a warning for this file; that is harmless.
+* **subPath** mount and rsync On first start, Nextcloud's entrypoint rsyncs files from `/usr/src/nextcloud` to `/var/www/html`. The `s3.config.php` subPath mount at `/var/www/html/config/s3.config.php` survives this because Kubernetes subPath mounts are bind-mounted at the kernel level and cannot be unlinked by rsync. rsync may log a warning for this file; that is harmless.
 
-**Redis**: Not included. Nextcloud will use database-based file locking, which is slower but functional. Add Redis if you see locking errors under concurrent access.
+* **Redis**: Not included. Nextcloud will use database-based file locking, which is slower but functional. Add Redis if you see locking errors under concurrent access.

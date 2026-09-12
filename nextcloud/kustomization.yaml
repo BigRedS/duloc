@@ -10,6 +10,8 @@ resources:
   - upload-config-configmap.yaml
   - deployment.yaml
   - service.yaml
+  - cron-rbac.yaml
+  - cronjob.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
