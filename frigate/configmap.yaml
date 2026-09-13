@@ -39,7 +39,8 @@ data:
             record:
                 enabled: True
                 retain:
-                    days: 0
+                    days: 0.0417 # ~1 hour
+                    mode: all
                 events:
                   retain:
                     default: 14
@@ -67,7 +68,8 @@ data:
             record:
                 enabled: True
                 retain:
-                    days: 0
+                    days: 0.0417 # ~1 hour
+                    mode: all
                 events:
                   retain:
                     default: 14
@@ -115,7 +117,8 @@ data:
             record:
                 enabled: True
                 retain:
-                    days: 0
+                    days: 0.0417 # ~1 hour
+                    mode: all
                 events:
                   retain:
                     default: 14
