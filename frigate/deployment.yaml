@@ -79,7 +79,8 @@ spec:
           hostPath:
             path: /dev/bus/usb
         - name: config
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: frigate-config
         - name: data
           emptyDir: {}
         - name: media
