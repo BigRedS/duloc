@@ -1,12 +1,15 @@
 global:
   domain: eu2.coralogix.com
-  clusterName: nuc
-  defaultApplicationName: nucs
-  defaultSubsystemName: nucs
+  clusterName: duloc
+  defaultApplicationName: duloc
+  defaultSubsystemName: duloc
   collectionInterval: 120s
 opentelemetry-agent:
   enabled: true
   mode: daemonset
+  # Disable the AWS EC2 probing, we're not on AWS. Without this, the probes
+  # fail and the deployment fails.
+  # Needs to be set per-subhcart
   provider: on-prem
   presets:
     spanMetrics:
@@ -14,6 +17,10 @@ opentelemetry-agent:
     profilesCollection:
       enabled: false
     profilesK8sAttributes:
+      enabled: false
+    jaegerReceiver:
+      enabled: false
+    zipkinReceiver:
       enabled: false
   startupProbe:
     failureThreshold: 30
@@ -31,6 +38,8 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
+  # Same disabling of AWS stuff as above
+  provider: on-prem
   resources:
     limits:
       cpu: 200m
@@ -38,6 +47,7 @@ opentelemetry-cluster-collector:
     requests:
       cpu: 50m
       memory: 128Mi
-  extraEnvs:
-    - name: GOGC
-      value: "400"
+# Remember to redefined CORALOGIX_PRIVATE_KEY if we need to put this in
+#  extraEnvs:
+#    - name: GOGC
+#      value: "400"
