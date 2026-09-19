@@ -36,6 +36,11 @@ data:
             motion:
                 mask:
                 - 640,235,362,219,172,190,0,172,0,0,640,0
+            objects:
+                track:
+                    - person
+                    - cat
+                    - dog
             record:
                 enabled: True
                 retain:
@@ -62,6 +67,12 @@ data:
                 height: 360
                 fps: 3
                 enabled: True
+            objects:
+                track:
+                    - person
+                    - cat
+                    - dog
+                    - car
             motion:
                 mask:
                 - 640,235,362,219,172,190,0,172,0,0,640,0
@@ -90,6 +101,11 @@ data:
                 height: 360
                 fps: 3
                 enabled: True
+            objects:
+                track:
+                    - person
+                    - cat
+                    - dog
             record:
                 enabled: True
                 retain:
@@ -114,6 +130,11 @@ data:
                 height: 360
                 fps: 3
                 enabled: True
+            objects:
+                track:
+                    - person
+                    - cat
+                    - dog
             record:
                 enabled: True
                 retain:
