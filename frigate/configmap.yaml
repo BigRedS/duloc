@@ -10,8 +10,8 @@ data:
           frigate.record.maintainer: debug
 
     mqtt:
-        enabled: false
-        host: "{FRIGATE_MQTT_HOST}"
+        enabled: true
+        host: 192.168.0.5
         user: "{FRIGATE_MQTT_USER}"
         password: "{FRIGATE_MQTT_PASSWORD}"
     detectors:

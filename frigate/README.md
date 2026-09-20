@@ -13,7 +13,6 @@ Frigate NVR with a Coral USB TPU. Exposed via Tailscale and a MetalLB address on
 `credentials.env` is gitignored and must be created from `credentials.env.example` before deploying:
 
 `credentials.env`:
-- `FRIGATE_MQTT_HOST` — MQTT broker hostname or IP; probably home-assistant
 - `FRIGATE_MQTT_USER` — MQTT username
 - `FRIGATE_MQTT_PASSWORD` — MQTT password
 - `FRIGATE_RTSP_USER` / `FRIGATE_RTSP_PASSWORD` — same username and password on all cameras
