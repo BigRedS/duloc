@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-config
+data:
+  telegraf.conf: |
+    [agent]
+      interval = "30s"
+      flush_interval = "10s"
+
+    [[inputs.http_response]]
+      urls = ["https://avi.st"]
+      response_status_code = 200
+      response_timeout = "5s"
+      response_string_match = "cookie.jpg"
+      [inputs.http_response.tags]
+        check = "avi.st"
+
+    [[inputs.http_response]]
+      urls = ["https://pics.avi.st"]
+      response_status_code = 200
+      response_timeout = "5s"
+      response_string_match = "Recent photos"
+      [inputs.http_response.tags]
+        check = "pics.avi.st"
+
+    [[inputs.http_response]]
+      urls = ["https://cubanyetis.net"]
+      response_status_code = 200
+      response_timeout = "5s"
+      [inputs.http_response.tags]
+        check = "cubanyetis.net"
+
+    [[inputs.http_response]]
+      urls = ["https://git.avi.st"]
+      response_status_code = 401
+      response_timeout = "5s"
+      [inputs.http_response.tags]
+        check = "git.avi.st"
+
+    [[inputs.http_response]]
+      urls = ["https://fellscout.avi.st"]
+      response_status_code = 401
+      response_timeout = "5s"
+      [inputs.http_response.tags]
+        check = "fellscout.avi.st"
+
+    [[inputs.http_response]]
+      urls = ["https://edgwarescouts.org.uk"]
+      response_status_code = 200
+      response_timeout = "5s"
+      response_string_match = "Join 2nd Edgware"
+      [inputs.http_response.tags]
+        check = "edgwarescouts.org.uk"
+
+    [[inputs.ping]]
+      urls = ["192.168.0.9"]
+      [inputs.ping.tags]
+        check = "tis-jenkins"
+
+    [[inputs.ping]]
+      urls = ["192.168.0.5"]
+      [inputs.ping.tags]
+        check = "home-assistant"
+
+    [[inputs.ping]]
+      urls = ["192.168.0.27"]
+      [inputs.ping.tags]
+        check = "wintendo"
+
+    [[inputs.ping]]
+      urls = ["192.168.0.8"]
+      [inputs.ping.tags]
+        check = "fairygodmother"
+
+    [[inputs.x509_cert]]
+      sources = ["https://avi.st:443", "https://pics.avi.st:443", "https://cubanyetis.net:443", "https://git.avi.st:443"]
+      [inputs.x509_cert.tagpass]
+        type = ["leaf"]
