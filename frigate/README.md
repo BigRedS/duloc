@@ -26,3 +26,4 @@ kubectl apply -k .
 ## Non-obvious things:
 
 - The Coral device genuinely Just Works but the container needs `privileged: true` in order to access it
+- The integrated graphics work again only because the container is privileged, but also only on H.264 not HEVC, and only because the vaapi preset is enabled
