@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwebui
+  namespace: openwebui
+  annotations:
+    tailscale.com/expose: "true"
+    tailscale.com/hostname: "openwebui"
+spec:
+  type: LoadBalancer
+  selector:
+    app: openwebui
+  ports:
+    - port: 80
+      targetPort: 8080

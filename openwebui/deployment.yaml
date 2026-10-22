@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openwebui
+  namespace: openwebui
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # RWO PVC can't attach to old and new pod at once
+  selector:
+    matchLabels:
+      app: openwebui
+  template:
+    metadata:
+      labels:
+        app: openwebui
+    spec:
+      containers:
+        - name: openwebui
+          image: ghcr.io/open-webui/open-webui:main
+          envFrom:
+            # WEBUI_SECRET_KEY, and OPENAI_API_KEYS (one per OPENAI_API_BASE_URLS entry, same order), from credentials.env
+            - secretRef:
+                name: openwebui-secret
+          env:
+            - name: OPENAI_API_BASE_URLS
+              value: "http://192.168.0.35:1234/v1;http://192.168.0.27:8080/v1"  # LM Studio; llama-server
+            - name: ENABLE_OLLAMA_API
+              value: "false"
+            # kube config always overrides ui-administered config:
+            - name: ENABLE_PERSISTENT_CONFIG
+              value: "false"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: openwebui-data
+              mountPath: /app/backend/data
+      volumes:
+        - name: openwebui-data
+          persistentVolumeClaim:
+            claimName: openwebui-data
